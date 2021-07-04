@@ -20,6 +20,7 @@ module.exports = {
   globals: {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
+    JSX: true, // https://stackoverflow.com/questions/64170868
   },
   parserOptions: {
     ecmaFeatures: {
@@ -38,10 +39,12 @@ module.exports = {
   },
   ignorePatterns: ['node_modules/'],
   rules: {
+    'array-bracket-spacing': ERROR,
     'arrow-body-style': [ERROR, 'as-needed'],
     'arrow-parens': [ERROR, 'as-needed'],
-    'indent': ERROR,
     'class-methods-use-this': OFF,
+    'comma-dangle': [ERROR, 'always-multiline'],
+    'global-require': WARNING,
     'import/imports-first': OFF,
     'import/newline-after-import': OFF,
     'import/no-dynamic-require': OFF,
@@ -49,6 +52,7 @@ module.exports = {
     'import/no-unresolved': ERROR,
     'import/no-webpack-loader-syntax': OFF,
     'import/prefer-default-export': OFF,
+    'indent': ERROR,
     'key-spacing': ERROR,
     'keyword-spacing': ERROR,
     'max-len': OFF,
@@ -58,11 +62,13 @@ module.exports = {
     'no-multi-spaces': ERROR,
     'no-unused-vars': ERROR,
     'no-use-before-define': OFF,
-    'global-require': WARNING,
+    'no-spaced-func': ERROR,
+    'object-curly-spacing': [ERROR, 'never'],
     'prefer-template': ERROR,
     'semi': [ERROR, 'always'],
     'space-before-blocks': [ERROR, 'always'],
     'space-in-parens': [ERROR, 'never'],
+    'space-infix-ops': ERROR,
     'space-unary-ops': ERROR,
     'react/destructuring-assignment': OFF,
     'react/no-array-index-key': OFF, // Sometimes its ok, e.g. non-changing data.
@@ -78,6 +84,21 @@ module.exports = {
     'react/jsx-props-no-spreading': OFF,
     'react/jsx-no-target-blank': OFF,
     'react/jsx-uses-vars': ERROR,
+    '@typescript-eslint/no-inferrable-types': OFF,
+    '@typescript-eslint/no-use-before-define': [
+      ERROR,
+      {functions: false, classes: false, variables: true},
+    ],
+    '@typescript-eslint/no-empty-function': OFF,
+    '@typescript-eslint/no-non-null-assertion': OFF, // Have to use type assertion anyways
+    '@typescript-eslint/no-unused-vars': [ERROR, {argsIgnorePattern: '^_'}],
+    '@typescript-eslint/ban-ts-comment': [
+      ERROR,
+      {'ts-expect-error': 'allow-with-description'},
+    ],
+    '@typescript-eslint/ban-types': WARNING,
+    '@typescript-eslint/no-shadow': ERROR,
+    '@typescript-eslint/no-redeclare': ERROR,
     'jsx-a11y/aria-props': ERROR,
     'jsx-a11y/click-events-have-key-events': WARNING,
     'jsx-a11y/heading-has-content': OFF,
