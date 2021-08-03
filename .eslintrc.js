@@ -59,7 +59,7 @@ module.exports = {
     'indent': ERROR,
     'key-spacing': ERROR,
     'keyword-spacing': ERROR,
-    'max-len': OFF,
+    'max-len': [ERROR, {"code": 80, "ignoreComments": true}],
     'newline-per-chained-call': OFF,
     'no-confusing-arrow': OFF,
     'no-console': WARNING,
