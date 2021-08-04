@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './Cover.module.css';
+import FlexCenterBox from './FlexCenterBox';
 
 type AppProps = {
   src: string;
@@ -16,25 +16,27 @@ const Cover = ({
   source,
   sourceUrl,
 }: AppProps): JSX.Element => (
-  <div className={styles.cover}>
+  <FlexCenterBox>
     <img src={src} alt="cover" />
-    {author && authorUrl && (
-      <p>
-        {'Photo by '}
-        <a href={authorUrl} target="_blank">
-          {author}
-        </a>
-        {source && sourceUrl && (
-          <>
-            {' on '}
-            <a href={sourceUrl} target="_blank">
-              {source}
-            </a>
-          </>
-        )}
-      </p>
-    )}
-  </div>
+    <>
+      {author && authorUrl && (
+        <p>
+          {'Photo by '}
+          <a href={authorUrl} target="_blank">
+            {author}
+          </a>
+          {source && sourceUrl && (
+            <>
+              {' on '}
+              <a href={sourceUrl} target="_blank">
+                {source}
+              </a>
+            </>
+          )}
+        </p>
+      )}
+    </>
+  </FlexCenterBox>
 );
 
 export default Cover;
