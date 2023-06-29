@@ -4,38 +4,40 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    title: 'The Power of Small, Consistent Actions',
+    Svg: require('@site/static/img/undraw_healthy_lifestyle.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Small, daily habits have a remarkable cumulative effect on our lives.
+        Rather than aiming for big leaps, improving just 1% each day can lead us
+        to long-term success.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    title: 'Identity-based Habits',
+    Svg: require('@site/static/img/undraw_programmer.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Real change starts from the inside out, transforming our self-identity
+        first in order to drive lasting habit change.
       </>
     ),
   },
   {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    title: 'Systems Over Goals',
+    Svg: require('@site/static/img/undraw_setup.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        It's crucial to focus more on systems rather than goals; while goals
+        define our desired outcomes, it's the systems or processes that will
+        consistently lead us there.
       </>
     ),
   },
 ];
 
-function Feature({Svg, title, description}) {
+function Feature({ Svg, title, description }) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
