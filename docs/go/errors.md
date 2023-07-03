@@ -69,7 +69,38 @@ func Sqrt(f float64) (float64, error) {
     // ...
 }
 ```
+呼叫者傳遞一個負數給 Sqrt() 函數，它會回傳一個 non-nil 錯誤值。呼叫者可以透過呼叫 error 的 Error() 方法取得錯誤訊息，或者直接印出它
+
+```
+f, err := Sqrt(-1)
+if err != nil {
+    fmt.Println(err)
+}
+```
+fmt 套件會呼叫錯物值的 Error() 方法，並格式化回傳的字串。
+
+錯誤實作的職責是總結上下文。os.Open 各式化回傳的錯誤訊息為 "open /etc/passwd: permission denied"，而不是僅為 "permission denied"。這樣的設計可以讓呼叫者更容易理解錯誤的原因。顯然我們剛才所宣告的 Sqrt() 函數所回傳的錯誤訊息，並沒有關於無效引數值的資訊
+
+為了增加資訊，可以透過 fmt 套件中的 Errorf 函數。它會根據 Printf 的規則格式化字串，並回傳由 errors.New 建立的錯誤值。
+
+```go
+if f < 0 {
+    return 0, fmt.Errorf("math: square root of negative number %g", f)
+}
+```
+
+在很多的情況下，使用 fmt.Errorf 已足夠。而由於 error 是一種介面，可以使用任意的資料結構作為錯誤值，藉此讓呼叫者可以檢查錯誤的詳細資訊。
+
+```go
+type NegativeSqrtError float64
+
+func (f NegativeSqrtError) Error() string {
+    return fmt.Sprintf("math: square root of negative number %g", float64(f))
+}
+```
+
 
 ## 參考來源
+
 * https://go.dev/blog/error-handling-and-go
 
