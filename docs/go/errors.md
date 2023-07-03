@@ -2,23 +2,29 @@
 sidebar_position: 1
 ---
 
-# Error
+# [go.dev] 錯誤處理
 
-非原創內容
+> 非原創內容，來源為 Andrew Gerrand 於 2011 年 7 月 12 日的文章 [Error handling and Go](https://go.dev/blog/error-handling-and-go)，如有版權問題，請告知，將會立即刪除。
 
-在 Go 語言中，錯誤是一個普通的值，並且通常是函數的最後一個回傳值，其為 error 型別。如果函數執行成功，則 error 型別為 nil，否則為錯誤訊息。此設計讓開發者能夠更細緻地控制並處理可能出現的錯誤情況。例如 os.Open() 函數，其回傳值為 *os.File 和 error。
+## 介紹
+
+在 Go 語言中，錯誤是一個普通的值，為內建的 error 型別。錯誤值被用於表明不正常的狀態，通常是函數的最後一個回傳值。例如當檔案開啟失敗時，os.Open() 函數會回傳一個 non-nil 的錯誤值。
 
 ```go
 func Open(name string) (file *File, err error)
 ```
 
+以下程式碼使用 os.Open() 開啟一個檔案。如果發生錯誤，則使用 log.Fatal() 函數顯示錯誤訊息並結束程式。
+
 ```go
 f, err := os.Open("filename.ext")
 if err != nil {
-    // 處理錯誤
     log.Fatal(err)
 }
+// 對開啟的檔案進行處理
 ```
+
+以下內容探討 Go 語言中錯誤處理的良好實務。
 
 ## error 型別
 
@@ -30,7 +36,9 @@ type error interface {
 }
 ```
 
-平常使用到的是 errors 套件中未匯出的 errorString 型別，其為一個 struct，只有一個 Error() string 方法回傳一個錯誤訊息。
+與全部內建的型別一樣，error 型別是在 [universe block](https://go.dev/ref/spec#Blocks) 中預先宣告的。
+
+最常使用到的是 errors 套件中未匯出的 errorString 型別，其為一個 struct，只有一個 Error() string 方法回傳一個錯誤訊息。
 
 ```go
 type errorString struct {
@@ -42,7 +50,7 @@ func (e *errorString) Error() string {
 }
 ```
 
-使用 errors.New() 函數建立自定義的 error 型別。errors.New() 函數接收一個字串，建立一個 errorString 型別，並作為 error 型別回傳。
+可以使用 errors.New() 建構一個錯誤值。它接收一個字串並轉換為 errors.errorString 型別的值，接著作為 error 型別回傳。
 
 ```go
 func New(text string) error {
@@ -50,7 +58,7 @@ func New(text string) error {
 }
 ```
 
-例如定義一個 Sqrt() 函數，其回傳值為 float64 和 error，如果輸入值為負數，則回傳 0 和 error。
+例如以下方式使用 errors.New
 
 ```go
 func Sqrt(f float64) (float64, error) {
@@ -62,7 +70,6 @@ func Sqrt(f float64) (float64, error) {
 }
 ```
 
+## 參考來源
 * https://go.dev/blog/error-handling-and-go
-* https://go.dev/blog/errors-are-values
-* https://go.dev/blog/go1.13-errors
 
