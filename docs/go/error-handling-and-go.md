@@ -166,6 +166,110 @@ if err != nil {
 }
 ```
 
+## 簡化重複的錯誤處理
+
+在 Go 語言中，錯誤處理很重要。該語言的設計與慣例鼓勵開發者在每個錯誤處理路徑上都有明確的處理方式（與其它語言拋出例外並且有時捕捉例外的慣例不同）。在某些情況下會導致 Go 程式碼過於冗長，但幸運的可以使用一些技術來最大化減少重複的錯誤處理。
+
+考慮 App Engine 應用程式，該應用程式具有一個 HTTP 處理器，能構從資料儲存區檢索紀錄並使用模版對其格式化。
+
+```go
+func init() {
+    http.HandleFunc("/view", viewRecord)
+}
+
+func viewRecord(w http.ResponseWriter, r *http.Request) {
+    c := appengine.NewContext(r)
+    key := datastore.NewKey(c, "Record", r.FormValue("id"), 0, nil)
+    record := new(Record)
+    if err := datastore.Get(c, key, record); err != nil {
+        http.Error(w, err.Error(), 500)
+        return
+    }
+    if err := viewTemplate.Execute(w, record); err != nil {
+        http.Error(w, err.Error(), 500)
+    }
+}
+```
+
+viewRecord 函數處理 datastore.Get 函數和 viewTemplate.Execute 函數回傳的錯誤。再這兩種情況下，它都會像使用者顯示一條簡單的錯誤訊息，其中包含 HTTP 狀態碼為 500。這看起來是一個可管理的程式碼行數，但後續增加更多的 HTTP 處理器，也會產生許多相同的錯誤處理的程式碼。
+
+為了減少重複的程式碼，可以定義一個自己的 HTTP appHandler 型別，它包含 error 型別的回傳值。
+
+```go
+type appHandler func(http.ResponseWriter, *http.Request) error
+```
+
+接著修改 viewRecord 函數，讓它回傳錯誤值。
+
+```go
+func viewRecord(w http.ResponseWriter, r *http.Request) error {
+    c := appengine.NewContext(r)
+    key := datastore.NewKey(c, "Record", r.FormValue("id"), 0, nil)
+    record := new(Record)
+    if err := datastore.Get(c, key, record); err != nil {
+        return err
+    }
+    return viewTemplate.Execute(w, record)
+}
+```
+
+這比原本的更為簡單，但是 http 套件不接受函數所回傳的錯誤值。為了解決這問題，在 appHandler 上實作 http.Handler 介面的 ServeHTTP 方法。
+
+```go
+func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    if err := fn(w, r); err != nil {
+        http.Error(w, err.Error(), 500)
+    }
+}
+```
+
+ServeHTTP 函數會呼叫 appHandler 函數，並將錯誤值轉換為 HTTP 錯誤回應給使用者。注意該方法的接收者 fn 是一個函數。（沒錯！Go 可以做到這件事！）ServeHTTP 方法透過在表達式 fn(w, r) 中呼叫接收者來調用函數。
+
+
+```go
+func init() {
+    http.Handle("/view", appHandler(viewRecord))
+}
+```
+
+```go
+type appError struct {
+    Error   error
+    Message string
+    Code    int
+}
+```
+
+```go
+type appHandler func(http.ResponseWriter, *http.Request) *appError
+```
+
+```go
+func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    if e := fn(w, r); e != nil { // e is *appError, not os.Error.
+        c := appengine.NewContext(r)
+        c.Errorf("%v", e.Error)
+        http.Error(w, e.Message, e.Code)
+    }
+}
+```
+
+```go
+func viewRecord(w http.ResponseWriter, r *http.Request) *appError {
+    c := appengine.NewContext(r)
+    key := datastore.NewKey(c, "Record", r.FormValue("id"), 0, nil)
+    record := new(Record)
+    if err := datastore.Get(c, key, record); err != nil {
+        return &appError{err, "Record not found", 404}
+    }
+    if err := viewTemplate.Execute(w, record); err != nil {
+        return &appError{err, "Can't display record", 500}
+    }
+    return nil
+}
+```
+
+
 ## 參考來源
 
 * https://go.dev/blog/error-handling-and-go
