@@ -154,6 +154,18 @@ type Error interface {
 }
 ```
 
+因此客戶端程式碼可以使用型別斷言來測試 net.Error，並區分為暫時性網路錯誤與永久性網路錯誤。例如網路爬蟲可以在遇到暫時性錯誤時，等待一段時間後重試，否則就放棄。
+
+```go
+if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+    time.Sleep(1e9)
+    continue
+}
+if err != nil {
+    log.Fatal(err)
+}
+```
+
 ## 參考來源
 
 * https://go.dev/blog/error-handling-and-go
