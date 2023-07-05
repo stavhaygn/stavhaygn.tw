@@ -251,9 +251,9 @@ type appError struct {
 type appHandler func(http.ResponseWriter, *http.Request) *appError
 ```
 
-（通常回傳實作 error 介面的具體型別而不是 errror 是一個錯誤的作法，請參考 [Go FAQ](https://go.dev/doc/faq#nil_error) 中討論的原因，但在此範例中是正確的，因為僅有 ServeHTTP 看到該值與使用它的內容）
+（通常回傳實作 error 介面的具體型別而不是 errror 是一個錯誤的作法，請參考 [Go FAQ](https://go.dev/doc/faq#nil_error) 中討論的原因，但在此範例中是正確的，因為僅有 ServeHTTP 看到該值與使用其內容的地方）
 
-使 appHandler 的 ServeHTTP 方法顯示給使用者正確的狀態碼及 appError 的 Message ，並將完整的錯誤訊息紀錄在 App Engine 開發者控制台。
+使 appHandler 的 ServeHTTP 方法向使用者顯示正確的狀態碼及 appError 的 Message ，並將完整的錯誤訊息紀錄在 App Engine 開發者控制台。
 
 ```go
 func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -265,7 +265,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-最後，我們更新了 viewRecord 的函數簽名，使它在遇到錯誤時可以回傳更多的上下文。
+最後，我們更新了 viewRecord 的函數特徵，使它在遇到錯誤時可以回傳更多的上下文。
 
 ```go
 func viewRecord(w http.ResponseWriter, r *http.Request) *appError {
@@ -282,8 +282,19 @@ func viewRecord(w http.ResponseWriter, r *http.Request) *appError {
 }
 ```
 
+這個版本的 viewRecord 與原本的版本所使用的程式碼行數相同，但是現在的每一行程式碼都有特定的意義，並且使我們提供更友善的使用者體驗。
+
+但事情還沒有結束；我們可以進一步改善錯誤處理，以下是一些想法：
+- 建立一個專門處理錯誤的處理器，使它渲染錯誤頁面的模板。
+- 當使用者是管理者時，發生錯誤時顯示堆疊追蹤，更便於除錯。
+- 增加 appError 的建構函數，透過它儲存堆疊追蹤，以便於除錯。
+- recover 在 appHandler 中發生的 panic，並在開發者控制台紀錄這些錯誤為「Critical」，同時僅向使用者回應「發生嚴重的錯誤」。這是一個很好的作法，避免讓使用者看到程式碼引發的錯誤，而難以理解。可參考 [Defer, Panic, and Recover](https://go.dev/blog/defer-panic-and-recover) 文章，了解更多關於 panic 的資訊。
+
+## 結論
+
+適當的錯誤處理是好軟體的基本要求。採用本文中說明的技術，你應該可以寫出更可靠與簡潔的 Go 程式碼。
 
 ## 參考來源
 
-* https://go.dev/blog/error-handling-and-go
+- [Error handling and Go](https://go.dev/blog/error-handling-and-go)
 
