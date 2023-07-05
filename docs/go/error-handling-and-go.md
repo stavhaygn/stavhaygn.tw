@@ -90,7 +90,7 @@ if f < 0 {
 
 在很多的情況下，使用 fmt.Errorf 已足夠。而由於 error 是一種介面，可以使用任意的資料結構作為錯誤值，藉此讓呼叫者可以檢查錯誤的詳細資訊。
 
-例如，呼叫者可能想要復原傳遞給 Sqrt 的無效引數。可以藉由定義一個新的實作 error 的型別來替代 errors.errorString。
+例如，呼叫者可能想要復原傳遞給 Sqrt 的無效引數。我們可以藉由定義一個新的實作 error 的型別來替代 errors.errorString。
 
 ```go
 type NegativeSqrtError float64
@@ -130,7 +130,7 @@ type SyntaxError struct {
 func (e *SyntaxError) Error() string { return e.msg }
 ```
 
-Offset 欄位不會以 error 的預設格式顯示，但是呼叫者可以使用它來找出錯誤發生的位置。
+Offset 屬性不會在使用 error 的預設格式時顯示，但是呼叫者可以使用它來找出錯誤發生的位置。
 
 ```go
 if err := dec.Decode(&val); err != nil {
@@ -193,7 +193,7 @@ func viewRecord(w http.ResponseWriter, r *http.Request) {
 
 viewRecord 函數處理 datastore.Get 函數和 viewTemplate.Execute 函數回傳的錯誤。再這兩種情況下，它都會像使用者顯示一條簡單的錯誤訊息，其中包含 HTTP 狀態碼為 500。這看起來是一個可管理的程式碼行數，但後續增加更多的 HTTP 處理器，也會產生許多相同的錯誤處理的程式碼。
 
-為了減少重複的程式碼，可以定義一個自己的 HTTP appHandler 型別，它包含 error 型別的回傳值。
+為了減少重複的程式碼，我們可以定義一個自己的 HTTP appHandler 型別，它包含 error 型別的回傳值。
 
 ```go
 type appHandler func(http.ResponseWriter, *http.Request) error
@@ -213,7 +213,7 @@ func viewRecord(w http.ResponseWriter, r *http.Request) error {
 }
 ```
 
-這比原本的更為簡單，但是 http 套件不接受函數所回傳的錯誤值。為了解決這問題，在 appHandler 上實作 http.Handler 介面的 ServeHTTP 方法。
+這比原本的更為簡單，但是 http 套件不接受函數所回傳的錯誤值。為了解決這問題，我們在 appHandler 上實作 http.Handler 介面的 ServeHTTP 方法。
 
 ```go
 func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -223,14 +223,19 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-ServeHTTP 函數會呼叫 appHandler 函數，並將錯誤值轉換為 HTTP 錯誤回應給使用者。注意該方法的接收者 fn 是一個函數。（沒錯！Go 可以做到這件事！）ServeHTTP 方法透過在表達式 fn(w, r) 中呼叫接收者來調用函數。
+ServeHTTP 方法會呼叫 appHandler 函數，並將錯誤值轉換為 HTTP 錯誤回應給使用者。注意該方法的接收者 fn 是一個函數。（沒錯！Go 可以做到這件事！）ServeHTTP 方法透過在表達式 fn(w, r) 中呼叫接收者來調用函數。
 
+現在，使用 http 套件註冊 viewRecord 時，使用 Handle 方法（取代 HandleFunc），因為 appHandler 是一個 http.Handler（不是 http.HandlerFunc）。
 
 ```go
 func init() {
     http.Handle("/view", appHandler(viewRecord))
 }
 ```
+
+有了基本的錯誤處理方式，可以使它對於使用者更為友善。相較於直接顯示錯誤訊息，更好的作法是給予使用者適合的 HTTP 狀態碼及簡單的錯誤訊息，並且在 App Engine 開發者控制台紀錄完整的錯誤訊息，以便於除錯。
+
+為了做到這點，我們建立一個包含 error 與其它屬性的 appError 結構。
 
 ```go
 type appError struct {
@@ -240,9 +245,15 @@ type appError struct {
 }
 ```
 
+現在我們修改 appHandler 行別，讓它回傳 *appError 型別的值。
+
 ```go
 type appHandler func(http.ResponseWriter, *http.Request) *appError
 ```
+
+（通常回傳實作 error 介面的具體型別而不是 errror 是一個錯誤的作法，請參考 [Go FAQ](https://go.dev/doc/faq#nil_error) 中討論的原因，但在此範例中是正確的，因為僅有 ServeHTTP 看到該值與使用它的內容）
+
+使 appHandler 的 ServeHTTP 方法顯示給使用者正確的狀態碼及 appError 的 Message ，並將完整的錯誤訊息紀錄在 App Engine 開發者控制台。
 
 ```go
 func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -253,6 +264,8 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     }
 }
 ```
+
+最後，我們更新了 viewRecord 的函數簽名，使它在遇到錯誤時可以回傳更多的上下文。
 
 ```go
 func viewRecord(w http.ResponseWriter, r *http.Request) *appError {
