@@ -41,7 +41,7 @@ if err != nil {
 ```
 
 
-有時候我們會將錯誤與已知的_特定_值比較，以檢查是否發生了特定的錯誤。
+有時候我們會將錯誤與已知的_特定（sentinel）_值比較，以檢查是否發生了特定的錯誤。
 
 
 ```go
@@ -101,7 +101,63 @@ if e, ok := err.(*QueryError); ok && e.Err == ErrPermission {
 
 ### Unwrap 方法
 
+Go 1.13 在 errors 與 fmt 標準函數庫中引入了新的功能，以簡化處理包含其他錯誤的錯誤。其中最重要的是一個慣例而不是一個變更：包含另一個錯誤的錯誤可能會實作 Unwrap 方法，以回傳底層的錯誤。如果 e1.Unwrap() 回傳 e2，我們就說 e1 包裝了 e2，並且你可以解包裝 e1 以取得 e2。
+
+根據這個慣例，我們可以給上面的 QueryError 型別一個回傳包含錯誤的 Unwrap 方法：
+
+```go
+func (e *QueryError) Unwrap() error { return e.Err }
+```
+
+解包裝錯誤的結果可能會有一個 Unwrap 方法；我們稱重複解包裝所產生的錯誤序列為_錯誤鏈（error chain）_。
+
 ### 使用 Is 與 As 檢查錯誤
+
+Go 1.13 的 errors 套件包含兩個新的函數用於檢查錯誤：Is 與 As。
+
+errors.Is 函數會將錯誤與值比較。
+
+```go
+// Similar to:
+//   if err == ErrNotFound { ... }
+if errors.Is(err, ErrNotFound) {
+    // something wasn't found
+}
+```
+
+The As function tests whether an error is a specific type.
+
+errors.As 函數會測試錯誤是否為特定型別。
+
+```go
+// Similar to:
+//   if e, ok := err.(*QueryError); ok { ... }
+var e *QueryError
+// Note *QueryError is the type of error.
+if errors.As(err, &e) {
+    // err is a *QueryError, and e is set to the error's value
+}
+```
+
+在最簡單的情況下，errors.Is 函數會像是與特定錯誤比較，而 errors.As 函數會像是型別斷言。然而，當操作包裝錯誤時，這些函數會考慮錯誤鏈中的所有錯誤。讓我們再次看一下上面解包裝 QueryError 以檢查底層錯誤的例子：
+
+```go
+if e, ok := err.(*QueryError); ok && e.Err == ErrPermission {
+    // query failed because of a permission problem
+}
+```
+
+我們可以使用 errors.Is 來簡化這個檢查：
+
+```go
+if errors.Is(err, ErrPermission) {
+    // err, or some error that it wraps, is a permission problem
+}
+```
+
+errors 套件也包含一個新的 Unwrap 函數，它會回傳呼叫錯誤的 Unwrap 方法的結果，或是當錯誤沒有 Unwrap 方法時回傳 nil。然而，通常使用 errors.Is 或 errors.As 會比較好，因為這些函數會在單一呼叫中檢查整個錯誤鏈。
+
+注意：雖然將指標傳給指標可能會感覺很奇怪，但在這個情況下是正確的。請將它視為將指標傳給錯誤型別的值；在這個情況下，回傳的錯誤是指標型別。
 
 ### 使用 %w 包裝錯誤
 
