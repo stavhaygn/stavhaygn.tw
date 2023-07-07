@@ -55,9 +55,47 @@ if err == ErrNotFound {
 錯誤值可以是任何滿足語言定義的 error 介面的型別。程式可以使用型別斷言或型別判斷來將錯誤值視為更特定的型別。
 
 ```go
+type NotFoundError struct {
+    Name string
+}
+
+func (e *NotFoundError) Error() string {
+    return e.Name + ": not found"
+}
+
+if e, ok := err.(*NotFoundError); ok {
+    // e.Name wasn't found
+}
 ```
 
 ### 添加訊息
+
+通常一個函數會在將錯誤傳遞到呼叫堆疊的上層時，會添加一些資訊，像是一個簡短的描述，說明錯誤發生時正在發生什麼事情。一個簡單的方式是建構一個新的錯誤，並將先前錯誤的訊息包含在其中：
+
+```go
+if err != nil {
+    return fmt.Errorf("decompress %v: %v", name, err)
+}
+```
+
+使用 fmt.Errorf 建構一個新的錯誤，會捨棄原始錯誤中除了文字之外的所有內容。如同我們在 QueryError 中看到的，有時候我們會想要定義一個新的錯誤型別，包含底層的錯誤，以便程式碼檢查。這裡再次看到 QueryError：
+
+```go
+type QueryError struct {
+    Query string
+    Err   error
+}
+```
+
+程式可以查看 *QueryError 值，並根據底層的錯誤做出決定。有時候你會看到這被稱為「解包裝」錯誤。
+
+```go
+if e, ok := err.(*QueryError); ok && e.Err == ErrPermission {
+    // query failed because of a permission problem
+}
+```
+
+標準函數庫中的 os.PathError 型別是另一個包含另一個錯誤的例子。
 
 ## 在 Go 1.13 中
 
