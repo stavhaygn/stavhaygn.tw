@@ -334,7 +334,73 @@ func Is(err, target error) bool {
 
 ## 錯誤與套件 API
 
+套件回傳的錯誤，應該描述開發者有哪些屬性可以依賴。一個設計良好的套件也會避免回傳不應該依賴的錯誤屬性。
+
+最簡單的規格是說，操作要麼成功要麼失敗，分別回傳 nil 或 non-nil 的錯誤值。在許多情況下，不需要更多的資訊。
+
+如果我們希望函數回傳可識別的錯誤狀態，例如「找不到項目」，我們可以回傳一個包裝了特定（sentinel）值的錯誤。
+
+```go
+var ErrNotFound = errors.New("not found")
+
+// FetchItem returns the named item.
+//
+// If no item with the name exists, FetchItem returns an error
+// wrapping ErrNotFound.
+func FetchItem(name string) (*Item, error) {
+	if itemNotFound(name) {
+		return nil, fmt.Errorf("%q: %w", name, ErrNotFound)
+	}
+	// ...
+}
+```
+
+還有其他現有的模式可以提供錯誤，呼叫者可以進行語意檢查，例如直接回傳特定值、特定型別或是可以透過謂語函數（predicate function）進行檢查的值。
+
+在所有情況下，都應該注意不要向使用者公開內部細節。如[是否要包裝](#是否要包裝)小節所述，在從另一個套件回傳錯誤時，應該將錯誤轉換為不公開底層錯誤的形式，除非你願意承諾在未來回傳該特定錯誤。
+
+```go
+f, err := os.Open(filename)
+if err != nil {
+	// The *os.PathError returned by os.Open is an internal detail
+	// To avoid exposing it to the caller, repackage it as a new
+	// error with the same text. We use the %v formatting verb, since
+	// %w would permit the caller to unwrap the original *os.PathError.
+	return fmt.Errorf("%v", err)
+}
+```
+
+如果函數定義為回傳包裝了特定值或型別的錯誤，不要直接回傳底層錯誤。
+
+```go
+var ErrPermission = errors.New("permission denied")
+
+// DoSomething returns an error wrapping ErrPermission if the user
+// does not have permission to do something.
+func DoSomething() error {
+	if !userHasPermission() {
+		// If we return ErrPermission directly, callers might come
+		// to depend on the exact error value, writing code like this:
+		//
+		//   if err := pkg.DoSomething(); err == pkg.ErrPermission { ... }
+		// 
+		// This will cause problems if we want to add additional
+		// context to the error in the future. To avoid this, we
+		// return an error wrapping the sentinel so that users must
+		// always unwrap it:
+		//
+		//   if err := pkg.DoSomething(); errors.Is(err, pkg.ErrPermission) { ... }
+		return fmt.Errorf("%w", ErrPermission)
+	}
+	// ...
+}
+```
+
 ## 結論
+
+雖然我們討論的變更僅僅是三個函數和一個格式化動詞，但我們希望它們能夠大幅改善 Go 程式中的錯誤處理。我們期望包裝提供額外的內容將變得普遍，幫助程式做出更好的決策，並幫助開發者更快地找到錯誤。
+
+像 Russ Cox 在 2019 年 GopherCon 的主題演講中所說的，我們在前往 Go 2 的路上會進行實驗、簡化和發佈。現在我們已經發佈了這些變更，我們期待接下來的實驗。
 
 ## 參考來源
 
