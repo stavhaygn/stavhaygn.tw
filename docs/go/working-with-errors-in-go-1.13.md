@@ -111,6 +111,22 @@ func (e *QueryError) Unwrap() error { return e.Err }
 
 解包裝錯誤的結果可能會有一個 Unwrap 方法；我們稱重複解包裝所產生的錯誤序列為_錯誤鏈（error chain）_。
 
+errors 套件中的 Unwrap 函數實作可參考 [/src/errors/wrap.go](https://github.com/golang/go/blob/master/src/errors/wrap.go)。
+
+```go title="/src/errors/wrap.go"
+func Unwrap(err error) error {
+	// highlight-start
+	u, ok := err.(interface {
+		Unwrap() error
+	})
+	// highlight-end
+	if !ok {
+		return nil
+	}
+	return u.Unwrap()
+}
+```
+
 ### 使用 Is 與 As 檢查錯誤
 
 Go 1.13 的 errors 套件包含兩個新的函數用於檢查錯誤：Is 與 As。
@@ -161,9 +177,160 @@ errors 套件也包含一個新的 Unwrap 函數，它會回傳呼叫錯誤的 U
 
 ### 使用 %w 包裝錯誤
 
+如前所述，使用 fmt.Errorf 函數將額外的資訊加入錯誤是很常見的。
+
+```go
+if err != nil {
+    return fmt.Errorf("decompress %v: %v", name, err)
+}
+```
+
+在 Go 1.13 中，fmt.Errorf 函數支援一個新的 %w 動詞。當這個動詞存在時，fmt.Errorf 回傳的錯誤會有 Unwrap 方法，該方法會回傳 %w 的參數，該參數必須是一個錯誤。在其他方面，%w 與 %v 相同。
+
+```go
+if err != nil {
+    // Return an error which unwraps to err
+    return fmt.Errorf("decompress %v: %w", name, err)
+}
+```
+
+使用 %w 包裝錯誤會讓它可以被 errors.Is 與 errors.As 使用：
+
+```go
+err := fmt.Errorf("access denied: %w", ErrPermission)
+...
+if errors.Is(err, ErrPermission) ...
+```
+
+可以看到在 fmt 套件中定義了 wrapError 結構，當 %w 存在於 format 時，fmt.Errorf 會回傳 wrapError 結構，並將原始錯誤儲存在 err 屬性中。可參考 [/src/fmt/errors.go](https://github.com/golang/go/blob/master/src/fmt/errors.go)。
+
+```go title="/src/fmt/errors.go"
+func Errorf(format string, a ...any) error {
+	p := newPrinter()
+	p.wrapErrs = true
+	p.doPrintf(format, a)
+	s := string(p.buf)
+	var err error
+	switch len(p.wrappedErrs) {
+	case 0:
+		err = errors.New(s)
+	case 1:
+		w := &wrapError{msg: s}
+		w.err, _ = a[p.wrappedErrs[0]].(error)
+		err = w
+	default:
+		if p.reordered {
+			sort.Ints(p.wrappedErrs)
+		}
+		var errs []error
+		for i, argNum := range p.wrappedErrs {
+			if i > 0 && p.wrappedErrs[i-1] == argNum {
+				continue
+			}
+			if e, ok := a[argNum].(error); ok {
+				errs = append(errs, e)
+			}
+		}
+		err = &wrapErrors{s, errs}
+	}
+	p.free()
+	return err
+}
+
+type wrapError struct {
+	msg string
+	err error
+}
+
+func (e *wrapError) Error() string {
+	return e.msg
+}
+
+func (e *wrapError) Unwrap() error {
+	return e.err
+}
+```
+
 ### 是否要包裝
 
+在錯誤中加入額外的內容時，無論是使用 fmt.Errorf 或是自訂型別，你都需要決定新的錯誤是否要包裝原始錯誤。這個問題沒有單一的答案；它取決於建立新錯誤的內容。包裝錯誤以讓呼叫者可以使用。若會暴露實作細節時，則不要包裝錯誤。
+
+像是一個 Parse 函數，它從 io.Reader 讀取複雜的資料結構。如果發生錯誤，我們希望報告發生錯誤的行列數。如果錯誤發生在從 io.Reader 讀取時，我們會想要包裝錯誤以允許檢查底層的問題。因為呼叫者提供了 io.Reader 給函數，所以公開由它產生的錯誤是有意義的。
+
+相反地，一個會呼叫數次資料庫的函數可能不應該回傳可以 unwrap 到其中一個呼叫的結果的錯誤。如果該函數使用的資料庫是實作細節，那麼公開這些錯誤就是違反抽象的。例如，如果你的套件 pkg 的 LookupUser 函數使用 Go 的 database/sql 套件，那麼它可能會遇到 sql.ErrNoRows 錯誤。如果你回傳 fmt.Errorf("accessing DB: %v", err) 這個錯誤，那麼呼叫者就無法查看裡面的 sql.ErrNoRows。但如果函數改為回傳 fmt.Errorf("accessing DB: %w", err)，那麼呼叫者就可以合理地寫
+
+```go
+err := pkg.LookupUser(...)
+if errors.Is(err, sql.ErrNoRows) ...
+```
+
+在這點上，即使你切換到不同的資料庫套件，為了不破壞你的客戶端，函數則必須總是回傳 sql.ErrNoRows。換句話說，包裝錯誤會讓錯誤成為你的 API 的一部分。如果你不想要承諾在未來支援該錯誤作為你的 API 的一部分，那麼你就不應該包裝錯誤。
+
+重要的是要記住，無論你是否包裝，錯誤訊息都會是一樣的。試著理解錯誤的人會有相同的資訊；包裝的選擇是關於是否給予程式額外的資訊以便它們可以做出更明智的決定，或是保留該資訊以維持抽象層。
+
 ## 使用 Is 與 As 方法客製化錯誤測試
+
+errors.Is 函數會檢查鏈中的每個錯誤是否與目標值相符。預設情況下，如果兩者相等，則錯誤與目標相符。此外，鏈中的錯誤可能會實作 Is 方法來宣告它與目標相符。
+
+舉個例子，考慮這個受 Upspin 錯誤套件啟發的錯誤，它會將錯誤與模版進行比較，並只考慮模版中非零的屬性：
+
+```go
+type Error struct {
+	Path string
+	User string
+}
+
+func (e *Error) Is(target error) bool {
+	t, ok := target.(*Error)
+	if !ok {
+		return false
+	}
+	return (e.Path == "" || e.Path == t.Path) &&
+		(e.User == "" || e.User == t.User)
+}
+
+if errors.Is(err, &Error{User: "someuser"}) {
+	// err's User field is "someuser".
+}
+```
+
+errors.As 函數同樣地，在 As 方法有實作時會呼叫它。
+
+關於 errors.Is 函數的實作，可參考 [/src/errors/wrap.go](https://github.com/golang/go/blob/master/src/errors/wrap.go)。
+```go title="/src/errors/wrap.go"
+func Is(err, target error) bool {
+	if target == nil {
+		return err == target
+	}
+
+	isComparable := reflectlite.TypeOf(target).Comparable()
+	for {
+		if isComparable && err == target {
+			return true
+		}
+		// highlight-next-line
+		if x, ok := err.(interface{ Is(error) bool }); ok && x.Is(target) {
+			return true
+		}
+		switch x := err.(type) {
+		case interface{ Unwrap() error }:
+			err = x.Unwrap()
+			if err == nil {
+				return false
+			}
+		case interface{ Unwrap() []error }:
+			for _, err := range x.Unwrap() {
+				if Is(err, target) {
+					return true
+				}
+			}
+			return false
+		default:
+			return false
+		}
+	}
+}
+```
 
 ## 錯誤與套件 API
 
