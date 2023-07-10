@@ -48,6 +48,40 @@ func GMin[T constraints.Ordered](x, y T) T {
 }
 ```
 
+現在可以通過撰寫像這樣的方式來使用型別引數呼叫此函數
+
+```go
+x := GMin[int](3, 4)
+```
+
+提供型別引數給 GMin，例如 int，稱為實例化。實例化分為兩個步驟。首先，編譯器會在整個泛型函數或型別中將所有型別引數替換為其各自的型別參數。其次，編譯器會驗證每個型別引數是否滿足各自的約束。我們很快就會知道這是什麼意思，但如果第二步失敗，實例化將失敗，並且程式無效。
+
+實例化成功後，我們有一個非泛型函數，可以像任何其他函數一樣呼叫。例如，在像這樣的程式碼中
+
+```go
+fmin := GMin[float64]
+m := fmin(2.71, 3.14)
+```
+
+實例化 GMin[float64] 產生的實際上是我們原來的浮點 Min 函數，我們可以在函數呼叫中使用它。
+
+型別參數也可以與型別一起使用。
+
+```go
+type Tree[T interface{}] struct {
+    left, right *Tree[T]
+    value T
+}
+
+func (t *Tree[T]) Lookup(x T) *Tree[T] { ... }
+
+var stringTree Tree[string]
+```
+
+在這裡，泛型型別 Tree 儲存型別參數 T 的值。泛型型別可以有方法，例如此範例中的 Lookup。為了使用泛型型別，必須對其進行實例化；Tree[string] 是使用型別引數 string 實例化 Tree 的範例。
+
+## 型別集
+
 ## 參考來源
 
 - [An Introduction To Generics](https://go.dev/blog/intro-generics)
