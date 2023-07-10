@@ -4,7 +4,6 @@ sidebar_position: 3
 
 # [go.dev] 在 Go 1.13 中處理錯誤
 
-
 > 非原創內容，來源為 Damien Neil 與 Jonathan Amsterdam 於 2019 年 10 月 17 日的文章 [Working with Errors in Go 1.13](https://go.dev/blog/go1.13-errors)，如有版權問題，請告知，將會立即刪除。
 
 ## 介紹
