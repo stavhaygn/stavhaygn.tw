@@ -6,8 +6,8 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Output of Learning',
-  tagline: 'Exploring, Learning, and Documenting My Journey',
+  title: '學習成果',
+  tagline: '探索、學習並記錄我的旅程',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here

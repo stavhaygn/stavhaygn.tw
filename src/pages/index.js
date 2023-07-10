@@ -18,7 +18,7 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="">
-            Limit any task to a maximum duration of 2 minutes. ⏱️
+            限制任務的最長持續時間為2分鐘。⏱️
           </Link>
         </div>
       </div>

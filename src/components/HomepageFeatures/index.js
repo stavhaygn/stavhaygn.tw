@@ -4,34 +4,30 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    title: 'The Power of Small, Consistent Actions',
+    title: '小而持續行動的力量',
     Svg: require('@site/static/img/undraw_healthy_lifestyle.svg').default,
     description: (
       <>
-        Small, daily habits have a remarkable cumulative effect on our lives.
-        Rather than aiming for big leaps, improving just 1% each day can lead us
-        to long-term success.
+        日常的小習慣對我們的生活產生顯著的累積影響。相較於尋求大躍進，每天只要進步
+        1% 就可以帶領我們取得長期的成功。
       </>
     ),
   },
   {
-    title: 'Identity-based Habits',
+    title: '基於身份的習慣',
     Svg: require('@site/static/img/undraw_programmer.svg').default,
     description: (
       <>
-        Real change starts from the inside out, transforming our self-identity
-        first in order to drive lasting habit change.
+        真正的改變是從內而外開始的，首先要改變我們的自我認同，才能推動持久的習慣改變。
       </>
     ),
   },
   {
-    title: 'Systems Over Goals',
+    title: '系統勝於目標',
     Svg: require('@site/static/img/undraw_setup.svg').default,
     description: (
       <>
-        It's crucial to focus more on systems rather than goals; while goals
-        define our desired outcomes, it's the systems or processes that will
-        consistently lead us there.
+        我們更需要專注於系統而非目標；雖然目標定義了我們想要的結果，但持續引領我們達到目標的是系統。
       </>
     ),
   },
@@ -59,6 +55,23 @@ export default function HomepageFeatures() {
           {FeatureList.map((props, idx) => (
             <Feature key={idx} {...props} />
           ))}
+        </div>
+        <div className="row">
+          <div className="col">
+            <div className="text--center padding-horiz--md">
+              <p>
+                取自
+                <a
+                  href="https://www.kobo.com/tw/zh/ebook/pGo8y2e4ET6pdObwFQDfkg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  《原子習慣》
+                </a>
+                一書
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
