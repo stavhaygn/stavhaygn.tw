@@ -20,7 +20,7 @@ Go 1.18 版本新增了對泛型的支援。泛型是自從第一個開源版本
 
 ## 型別參數
 
-函數和型別現在允許有型別參數。型別參數列表看起來像一般的參數列表，只是它使用方括號而不是圓括號。
+函數和型別現在允許有型別參數。型別參數串列看起來像一般的參數串列，只是它使用方括號而不是圓括號。
 
 To show how this works, let’s start with the basic non-generic Min function for floating point values:
 
@@ -35,7 +35,7 @@ func Min(x, y float64) float64 {
 }
 ```
 
-我們可以透過添加型別參數列表來使此函數成為泛型，使其適用於不同的型別。在此範例中，我們添加了一個帶有單個型別參數 T 的型別參數列表，並將 float64 的使用替換為 T。
+我們可以透過添加型別參數串列來使此函數成為泛型，使其適用於不同的型別。在此範例中，我們添加了一個帶有單個型別參數 T 的型別參數串列，並將 float64 的使用替換為 T。
 
 ```go
 import "golang.org/x/exp/constraints"
@@ -86,7 +86,7 @@ var stringTree Tree[string]
 
 一個普通的函數對於每個值參數都有一個型別；該型別定義了一組值。例如，如果我們有一個 float64 型別，如上面的非泛型函數 Min，則引數值的可允許的集合，是可以由 float64 型別表示的浮點值集合。
 
-同樣地，型別參數列表對於每個型別參數都有一個型別。因為型別參數本身就是一種型別，所以型別參數的型別定義了一組型別。這種元型別稱為型別約束。
+同樣地，型別參數串列對於每個型別參數都有一個型別。因為型別參數本身就是一種型別，所以型別參數的型別定義了一組型別。這種元型別稱為型別約束。
 
 在泛型 GMin 中，型別約束是從 [constraints 套件](https://pkg.go.dev/golang.org/x/exp/constraints)匯入。Ordered 約束描述了所有具有可排序值的型別集，換句話說，可使用 < 運算子（或 <=，> 等）進行比較。約束確保只有具有可排序值的型別才能傳遞給 GMin。這也意味著在 GMin 函數主體中，可以使用該型別參數的值與 < 運算子進行比較。
 
@@ -122,7 +122,7 @@ type Ordered interface {
 
 當用作型別約束時，介面定義的型別集確切指定了允許作為相應型別參數的型別引數的型別。在泛型函數主體中，如果運算元（operand）的型別是帶有約束 C 的型別參數 P，則只有在 C 的型別集中的所有型別都允許操作時，才允許操作（目前在這裡有一些實作限制，但是普通程式碼不太可能遇到它們）。
 
-用作約束的介面可以給定名稱（例如 Ordered），也可以是內嵌（inlined）在型別參數列表中的文字介面。例如：
+用作約束的介面可以給定名稱（例如 Ordered），也可以是內嵌（inlined）在型別參數串列中的文字介面。例如：
 
 ```go
 [S interface{~[]E}, E interface{}]
@@ -136,7 +136,7 @@ type Ordered interface {
 [S ~[]E, E interface{}]
 ```
 
-因為空介面在型別參數列表中很常見，而且在普通的 Go 程式碼中也很常見，所以 Go 1.18 引入了一個新的預先宣告的識別符號 any，作為空介面型別的別名。有了這個，我們就可以得到這個慣用的程式碼：
+因為空介面在型別參數串列中很常見，而且在普通的 Go 程式碼中也很常見，所以 Go 1.18 引入了一個新的預先宣告的識別符號 any，作為空介面型別的別名。有了這個，我們就可以得到這個慣用的程式碼：
 
 ```go
 [S ~[]E, E any]
@@ -176,9 +176,64 @@ m = GMin(a, b) // no type argument
 
 這種從函數引數的型別推論型別引數的推論稱為函數引數型別推論。
 
-函數引數型別推論僅適用於函數參數中使用的型別參數，而不適用於僅在函數結果中使用或僅在函數主體中使用的型別參數。例如，它不適用於僅使用 T 作為結果的函數 MakeT[T any]() T。
+函數引數型別推論僅適用於函數參數中使用的型別參數，而不適用於僅在函數結果中使用或僅在函數主體中使用的型別參數。例如，它不適用於僅使用 T 作為結果的函數 MakeT\[T any]() T。
 
 ### 約束型別推論
+
+語言支援另一種型別推論，約束型別推論。為了描述這一點，讓我們從這個例子開始，這個例子是對整數切片進行縮放：
+
+```go
+// Scale returns a copy of s with each element multiplied by c.
+// This implementation has a problem, as we will see.
+func Scale[E constraints.Integer](s []E, c E) []E {
+    r := make([]E, len(s))
+    for i, v := range s {
+        r[i] = v * c
+    }
+    return r
+}
+```
+
+這是一個泛型函數，它可以處理任何整數型別的切片。
+
+現在假設我們有一個多維點型別，其中每個點只是一個整數串列，給出了點的坐標。自然地，這型別會有一些方法。
+
+```go
+type Point []int32
+
+func (p Point) String() string {
+    // Details not important.
+}
+```
+
+有時我們想要縮放一個點。因為一個點只是一個整數切片，所以我們可以使用我們之前寫的 Scale 函數：
+
+```go
+// ScaleAndPoint doubles a Point and prints it.
+func ScaleAndPrint(p Point) {
+    r = Scale(p, 2)
+    fmt.Println(r.String()) // DOES NOT COMPILE
+}
+```
+
+不幸的是，無法編譯，並出現錯誤，例如 r.String undefined (type []int32 has no field or method String)。
+
+問題在於 Scale 函數回傳一個型別為 []E 的值，其中 E 是引數切片的元素型別。當我們使用型別為 Point 的值呼叫 Scale 時，其底層型別為 []int32，我們得到的是型別為 []int32 的值，而不是 Point。這是根據泛型程式碼的撰寫方式，但這不是我們想要的。
+
+為了修正這個問題，我們必須更改 Scale 函數，以使用切片型別的型別參數。
+
+```go
+// Scale returns a copy of s 
+func Scale[S ~[]E, E contrains.Integer](s S, c E) S {
+    r := make(S, len(s))
+    for i, v := range s {
+        r[i] = v * c
+    }
+    return r
+}
+```
+
+我們採用了一個新的型別參數 S，它是切片引數的型別。我們對它進行了約束，使其底層型別為 S 而不是 []E，結果型別現在為 S。由於 E 被約束為整數，效果與之前相同：第一個引數必須是某種整數型別的切片。函數主體的唯一變化是，現在在呼叫 make 時，我們傳遞的是 S，而不是 []E。
 
 ## 參考來源
 
