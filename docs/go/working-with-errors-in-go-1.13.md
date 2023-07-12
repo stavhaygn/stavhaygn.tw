@@ -4,12 +4,11 @@ sidebar_position: 3
 
 # [go.dev] 在 Go 1.13 中處理錯誤
 
-
 > 非原創內容，來源為 Damien Neil 與 Jonathan Amsterdam 於 2019 年 10 月 17 日的文章 [Working with Errors in Go 1.13](https://go.dev/blog/go1.13-errors)，如有版權問題，請告知，將會立即刪除。
 
 ## 介紹
 
-Go 將錯誤視為值 [errors as values](https://go.dev/blog/errors-are-values) 的方式在過去十年間為我們提供了很好的幫助。儘管標準函數庫對於錯誤的支援很少——僅有 errors.New 與 fmt.Errorf 函數，他們只包含了一條錯誤訊息——內建的 error 介面允許 Go 開發者添加他們想要的任何資訊。型別要滿足 error 介面所需要實作只有 Error 方法：
+Go 將錯誤視為值 [errors as values](https://go.dev/blog/errors-are-values) 的方式在過去十年間為我們提供了很好的幫助。儘管標準函數庫對於錯誤的支援很少——僅有 errors.New 與 fmt.Errorf 函數，他們只包含了一條錯誤訊息——內建的 error 介面允許 Go 開發者添加他們想要的任何資訊。型別要滿足 error 介面所需要實作的只有 Error 方法：
 
 ```go
 type QueryError struct {
@@ -40,9 +39,7 @@ if err != nil {
 }
 ```
 
-
 有時候我們會將錯誤與已知的_特定（sentinel）_值比較，以檢查是否發生了特定的錯誤。
-
 
 ```go
 var ErrNotFound = errors.New("not found")
@@ -268,7 +265,7 @@ if errors.Is(err, sql.ErrNoRows) ...
 
 重要的是要記住，無論你是否包裝，錯誤訊息都會是一樣的。試著理解錯誤的人會有相同的資訊；包裝的選擇是關於是否給予程式額外的資訊以便它們可以做出更明智的決定，或是保留該資訊以維持抽象層。
 
-## 使用 Is 與 As 方法客製化錯誤測試
+## 使用 Is 與 As 方法自定義錯誤測試
 
 errors.Is 函數會檢查鏈中的每個錯誤是否與目標值相符。預設情況下，如果兩者相等，則錯誤與目標相符。此外，鏈中的錯誤可能會實作 Is 方法來宣告它與目標相符。
 
