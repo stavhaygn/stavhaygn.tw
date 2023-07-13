@@ -174,7 +174,7 @@ m = GMin(a, b) // no type argument
 
 這是透過將引數 a 和 b 的型別與參數 x 和 y 的型別進行匹配來完成的。
 
-這種從函數引數的型別推論型別引數的推論稱為函數引數型別推論。
+這種從函數引數的型別推斷出型別引數的推論稱為函數引數型別推論。
 
 函數引數型別推論僅適用於函數參數中使用的型別參數，而不適用於僅在函數結果中使用或僅在函數主體中使用的型別參數。例如，它不適用於僅使用 T 作為結果的函數 MakeT\[T any]() T。
 
@@ -211,7 +211,7 @@ func (p Point) String() string {
 ```go
 // ScaleAndPoint doubles a Point and prints it.
 func ScaleAndPrint(p Point) {
-    r = Scale(p, 2)
+    r := Scale(p, 2)
     fmt.Println(r.String()) // DOES NOT COMPILE
 }
 ```
@@ -224,7 +224,7 @@ func ScaleAndPrint(p Point) {
 
 ```go
 // Scale returns a copy of s 
-func Scale[S ~[]E, E contrains.Integer](s S, c E) S {
+func Scale[S ~[]E, E constraints.Integer](s S, c E) S {
     r := make(S, len(s))
     for i, v := range s {
         r[i] = v * c
