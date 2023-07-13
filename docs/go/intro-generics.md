@@ -257,6 +257,6 @@ func Scale[S ~[]E, E constraints.Integer](s S, c E) S {
 
 除了謹慎之外，我們很高興能夠使用泛型，我們希望它們能夠使 Go 開發者更有生產力。
 
-## 參考來源
+## 內容來源
 
 - [An Introduction To Generics](https://go.dev/blog/intro-generics)

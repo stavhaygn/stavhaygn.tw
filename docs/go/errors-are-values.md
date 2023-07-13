@@ -177,6 +177,6 @@ if b.Flush() != nil {
 
 關於原作者與 @jxck_ 的完整互動過程，請參考[部落格文章](https://jxck.hatenablog.com/entry/golang-error-handling-lesson-by-rob-pike)
 
-## 參考來源
+## 內容來源
 
 - [Errors are values](https://go.dev/blog/errors-are-values)
