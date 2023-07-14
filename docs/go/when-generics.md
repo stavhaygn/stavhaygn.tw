@@ -62,6 +62,56 @@ func MapKeys(m interface{}) []interface{} {
 }
 ```
 
+### 通用的資料結構
+
+另一種型別參數可能有用的情況是通用的資料結構。通用的資料結構是像切片或映射這樣的東西，但它不是內建到語言中的，例如鏈結串列或二元樹。
+
+今天，需要這種資料結構的程式通常會做以下兩件事之一：使用特定的元素型別撰寫它們，或使用介面型別。將特定的元素型別替換為型別參數可以產生一個更通用的資料結構，該資料結構可以在程式的其他部分或其他程式中使用。將介面型別替換為型別參數可以允許以更有效的方式儲存資料，節省記憶體資源；它還可以允許程式碼避免型別斷言，並在建置時完全進行型別檢查。
+
+例如，這是使用型別參數的二元樹資料結構的部分內容：
+
+```go
+// Tree is a binary tree.
+type Tree[T any] struct {
+    cmp func(T, T) int
+    root *node[T]
+}
+
+// A node in a Tree.
+type node[T any] struct {
+    left, right  *node[T]
+    val          T
+}
+
+// find returns a pointer to the node containing val,
+// or, if val is not present, a pointer to where it
+// would be placed if added.
+func (bt *Tree[T]) find(val T) **node[T] {
+    pl := &bt.root
+    for *pl != nil {
+        switch cmp := bt.cmp(val, (*pl).val); {
+        case cmp < 0:
+            pl = &(*pl).left
+        case cmp > 0:
+            pl = &(*pl).right
+        default:
+            return pl
+        }
+    }
+    return pl
+}
+
+// Insert inserts val into bt if not already there,
+// and reports whether it was inserted.
+func (bt *Tree[T]) Insert(val T) bool {
+    pl := bt.find(val)
+    if *pl != nil {
+        return false
+    }
+    *pl = &node[T]{val: val}
+    return true
+}
+```
 
 ## 內容來源
 
