@@ -132,6 +132,51 @@ func (bt *Tree[T]) Insert(val T) bool {
 
 換句話說，將方法轉換為函數比將方法添加到型別簡單得多。因此，對於通用資料型別，優先使用函數而不是撰寫需要方法的約束。
 
+### 實作共用的方法
+
+另一種型別參數可能有用的情況是不同型別需要實作某些共用的方法，而且不同型別的實作看起來都一樣。
+
+例如，考慮標準函數庫的 sort.Interface。它要求型別實作三個方法：Len、Swap 和 Less。
+
+這是一個泛型型別 SliceFn 的範例，它為任何切片型別實作 sort.Interface：
+
+```go
+// SliceFn implements sort.Interface for a slice of T.
+type SliceFn[T any] struct {
+    s    []T
+    less func(T, T) bool
+}
+
+func (s SliceFn[T]) Len() int {
+    return len(s.s)
+}
+
+func (s SliceFn[T]) Swap(i, j int) {
+    s.s[i], s.s[j] = s.s[j], s.s[i]
+}
+
+func (s SliceFn[T]) Less(i, j int) bool {
+    return s.less(s.s[i], s.s[j])
+}
+```
+
+對於任何切片型別，Len 和 Swap 方法都完全相同。Less 方法需要一個比較，這是 SliceFn 名稱中 Fn 部分的意思。與前面的 Tree 範例一樣，我們將在建立 SliceFn 時傳入一個函數。
+
+這是如何使用比較函數使 SliceFn 排序任何切片：
+
+```go
+// SortFn sorts s in place using a comparison function.
+func SortFn[T any](s []T, less func(T, T) bool) {
+    sort.Sort(SliceFn[T]{s, less})
+}
+```
+
+這與標準函數庫函數 sort.Slice 相似，但比較函數是使用值而不是切片索引撰寫的。
+
+使用型別參數來撰寫這種程式碼是合適的，因為所有切片型別的方法看起來都完全一樣。
+
+（我應該提到，Go 1.19– 而不是 1.18– 很可能會包含一個使用比較函數來排序切片的泛型函數，而且該泛型函數很可能不會使用 sort.Interface。請參閱[提案 #47619](https://github.com/golang/go/issues/47619)。但是即使這個特定的範例很可能不會有用，一般的觀點仍然是正確的：當你需要實作對所有相關型別來說看起來都一樣的方法時，使用型別參數是合理的。）
+
 ## 內容來源
 
 - [when-generics](https://go.dev/blog/when-generics)
