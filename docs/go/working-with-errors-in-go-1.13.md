@@ -399,6 +399,6 @@ func DoSomething() error {
 
 像 Russ Cox 在 2019 年 GopherCon 的主題演講中所說的，我們在前往 Go 2 的路上會進行實驗、簡化和發佈。現在我們已經發佈了這些變更，我們期待接下來的實驗。
 
-## 參考來源
+## 內容來源
 
 - [Working with Errors in Go 1.13](https://go.dev/blog/go1.13-errors)

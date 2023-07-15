@@ -294,7 +294,7 @@ func viewRecord(w http.ResponseWriter, r *http.Request) *appError {
 
 適當的錯誤處理是好軟體的基本要求。採用本文中說明的技術，你應該可以寫出更可靠與簡潔的 Go 程式碼。
 
-## 參考來源
+## 內容來源
 
 - [Error handling and Go](https://go.dev/blog/error-handling-and-go)
 
