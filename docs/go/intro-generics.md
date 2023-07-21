@@ -96,13 +96,19 @@ var stringTree Tree[string]
 
 直到最近，Go 規格說介面定義了一組方法，這大致是介面中列舉的方法集。實作所有這些方法的任何型別都實作了該介面。
 
+![](/img/docs/go/intro-generics/interface-1.png)
+
 但是，從這個角度來看，介面定義了一組型別，即實作這些方法的型別。從這個角度來看，介面型別的值是介面型別集合的元素，而不是介面型別的實作。
+
+![](/img/docs/go/intro-generics/interface-2.png)
 
 這兩種觀點導致相同的結果：對於每組方法，我們都可以想像實作這些方法的型別的相應集合，並且這是介面定義的型別集。
 
 但是，對於我們的目的來說，型別集的觀點比方法集的觀點更具優勢：我們可以明確地將型別添加到集合中，從而以新的方式控制型別集。
 
 我們已經擴展了介面型別的語法，以使其運作。例如，interface{ int|string|bool } 定義了包含型別 int、string 和 bool 的型別集。
+
+![](/img/docs/go/intro-generics/interface-3.png)
 
 另一種說法是，此介面僅由 int、string 或 bool 滿足。
 
